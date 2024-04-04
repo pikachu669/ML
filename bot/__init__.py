@@ -121,8 +121,8 @@ if DATABASE_URL:
                     with open(file_, "wb+") as f:
                         f.write(value)
                     if file_ == "cfg.zip":
-                        run(["rm", "-rf", "/JDownloader/cfg"])
-                        run(["7z", "x", "cfg.zip", "-o/JDownloader"])
+                        srun(["rm", "-rf", "/JDownloader/cfg"])
+                        srun(["7z", "x", "cfg.zip", "-o/JDownloader"])
                         remove("cfg.zip")
         if a2c_options := db.settings.aria2c.find_one({"_id": bot_id}):
             del a2c_options["_id"]
