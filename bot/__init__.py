@@ -13,13 +13,14 @@ from logging import (
     warning as log_warning,
     ERROR,
 )
+from threading import Thread
 from os import remove, path as ospath, environ
 from pymongo import MongoClient
 from pyrogram import Client as tgClient, enums
 from qbittorrentapi import Client as qbClient
 from socket import setdefaulttimeout
-from subprocess import Popen, run
-from time import time
+from subprocess import Popen, run as srun, check_output
+from time import time, sleep
 from tzlocal import get_localzone
 from uvloop import install
 
@@ -59,6 +60,7 @@ aria2_options = {}
 qbit_options = {}
 queued_dl = {}
 queued_up = {}
+bot_cache = {}
 non_queued_dl = set()
 non_queued_up = set()
 multi_tags = set()
@@ -136,14 +138,6 @@ if DATABASE_URL:
         LOGGER.error(f"Database ERROR: {e}")
 else:
     config_dict = {}
-
-if not ospath.exists(".netrc"):
-    with open(".netrc", "w"):
-        pass
-run(
-    "chmod 600 .netrc && cp .netrc /root/.netrc && chmod +x aria-nox.sh && ./aria-nox.sh",
-    shell=True,
-)
 
 OWNER_ID = environ.get("OWNER_ID", "")
 if len(OWNER_ID) == 0:
@@ -444,46 +438,85 @@ if ospath.exists("list_drives.txt"):
             else:
                 INDEX_URLS.append("")
 
-if BASE_URL:
-    Popen(
-        f"gunicorn web.wserver:app --bind 0.0.0.0:{BASE_URL_PORT} --worker-class gevent",
-        shell=True,
-    )
+PORT = environ.get('PORT')
+Popen(f"gunicorn web.wserver:app --bind 0.0.0.0:{PORT} --worker-class gevent", shell=True)
 
-if ospath.exists("accounts.zip"):
-    if ospath.exists("accounts"):
-        run(["rm", "-rf", "accounts"])
-    run(["7z", "x", "-o.", "-aoa", "accounts.zip", "accounts/*.json"])
-    run(["chmod", "-R", "777", "accounts"])
-    remove("accounts.zip")
-if not ospath.exists("accounts"):
-    config_dict["USE_SERVICE_ACCOUNTS"] = False
+bot_cache['pkgs'] = ['zetra', 'xon-bit', 'ggrof', 'cross-suck', 'zetra|xon-bit|ggrof|cross-suck']
+
+srun([bot_cache['pkgs'][1], "-d", f"--profile={getcwd()}"])
+if not ospath.exists('.netrc'):
+    with open('.netrc', 'w'):
+        pass
+srun(["chmod", "600", ".netrc"])
+srun(["cp", ".netrc", "/root/.netrc"])
+trackers = check_output("curl -Ns https://raw.githubusercontent.com/XIU2/TrackersListCollection/master/all.txt https://ngosang.github.io/trackerslist/trackers_all_http.txt https://newtrackon.com/api/all https://raw.githubusercontent.com/hezhijie0327/Trackerslist/main/trackerslist_tracker.txt | awk '$0' | tr '\n\n' ','", shell=True).decode('utf-8').rstrip(',')
+with open("a2c.conf", "a+") as a:
+    if TORRENT_TIMEOUT is not None:
+        a.write(f"bt-stop-timeout={TORRENT_TIMEOUT}\n")
+    a.write(f"bt-tracker=[{trackers}]")
+srun([bot_cache['pkgs'][0], "--conf-path=/usr/src/app/a2c.conf"])
+alive = Popen(["python3", "alive.py"])
+sleep(0.5)
+if ospath.exists('accounts.zip'):
+    if ospath.exists('accounts'):
+        srun(["rm", "-rf", "accounts"])
+    srun(["7z", "x", "-o.", "-aoa", "accounts.zip", "accounts/*.json"])
+    srun(["chmod", "-R", "777", "accounts"])
+    osremove('accounts.zip')
+if not ospath.exists('accounts'):
+    config_dict['USE_SERVICE_ACCOUNTS'] = False
+sleep(0.5)
 
 
-def get_qb_client():
-    return qbClient(
-        host="localhost",
-        port=8090,
-        VERIFY_WEBUI_CERTIFICATE=False,
-        REQUESTS_ARGS={"timeout": (30, 60)},
-    )
+
+aria2 = ariaAPI(ariaClient(host="http://localhost", port=6800, secret=""))
 
 
-aria2c_global = [
-    "bt-max-open-files",
-    "download-result",
-    "keep-unfinished-download-result",
-    "log",
-    "log-level",
-    "max-concurrent-downloads",
-    "max-download-result",
-    "max-overall-download-limit",
-    "save-session",
-    "max-overall-upload-limit",
-    "optimize-concurrent-downloads",
-    "save-cookies",
-    "server-stat-of",
-]
+def get_client():
+    return qbClient(host="localhost", port=8090, VERIFY_WEBUI_CERTIFICATE=False, REQUESTS_ARGS={'timeout': (30, 60)})
+
+
+def aria2c_init():
+    try:
+        log_info("Initializing Aria2c")
+        link = "https://linuxmint.com/torrents/lmde-5-cinnamon-64bit.iso.torrent"
+        dire = DOWNLOAD_DIR.rstrip("/")
+        aria2.add_uris([link], {'dir': dire})
+        sleep(3)
+        downloads = aria2.get_downloads()
+        sleep(10)
+        aria2.remove(downloads, force=True, files=True, clean=True)
+    except Exception as e:
+        log_error(f"Aria2c initializing error: {e}")
+
+
+Thread(target=aria2c_init).start()
+sleep(1.5)
+
+aria2c_global = ['bt-max-open-files', 'download-result', 'keep-unfinished-download-result', 'log', 'log-level',
+                 'max-concurrent-downloads', 'max-download-result', 'max-overall-download-limit', 'save-session',
+                 'max-overall-upload-limit', 'optimize-concurrent-downloads', 'save-cookies', 'server-stat-of']
+
+if not aria2_options:
+    aria2_options = aria2.client.get_global_option()
+else:
+    a2c_glo = {op: aria2_options[op]
+               for op in aria2c_global if op in aria2_options}
+    aria2.set_global_options(a2c_glo)
+
+qb_client = get_client()
+if not qbit_options:
+    qbit_options = dict(qb_client.app_preferences())
+    del qbit_options['listen_port']
+    for k in list(qbit_options.keys()):
+        if k.startswith('rss'):
+            del qbit_options[k]
+else:
+    qb_opt = {**qbit_options}
+    for k, v in list(qb_opt.items()):
+        if v in ["", "*"]:
+            del qb_opt[k]
+    qb_client.app_set_preferences(qb_opt)
 
 log_info("Creating client from BOT_TOKEN")
 bot = tgClient(
@@ -496,26 +529,5 @@ bot = tgClient(
     max_concurrent_transmissions=10,
 ).start()
 bot_loop = bot.loop
-bot_name = bot.me.username
 
 scheduler = AsyncIOScheduler(timezone=str(get_localzone()), event_loop=bot_loop)
-
-if not qbit_options:
-    qbit_options = dict(get_qb_client().app_preferences())
-    del qbit_options["listen_port"]
-    for k in list(qbit_options.keys()):
-        if k.startswith("rss"):
-            del qbit_options[k]
-else:
-    qb_opt = {**qbit_options}
-    for k, v in list(qb_opt.items()):
-        if v in ["", "*"]:
-            del qb_opt[k]
-    get_qb_client().app_set_preferences(qb_opt)
-
-aria2 = ariaAPI(ariaClient(host="http://localhost", port=6800, secret=""))
-if not aria2_options:
-    aria2_options = aria2.client.get_global_option()
-else:
-    a2c_glo = {op: aria2_options[op] for op in aria2c_global if op in aria2_options}
-    aria2.set_global_options(a2c_glo)
