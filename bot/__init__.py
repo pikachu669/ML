@@ -14,7 +14,7 @@ from logging import (
     ERROR,
 )
 from threading import Thread
-from os import remove, path as ospath, environ
+from os import remove, path as ospath, environ, getcwd
 from pymongo import MongoClient
 from pyrogram import Client as tgClient, enums
 from qbittorrentapi import Client as qbClient
