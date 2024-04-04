@@ -520,6 +520,15 @@ else:
             del qb_opt[k]
     qb_client.app_set_preferences(qb_opt)
 
+
+def get_qb_client():
+    return qbClient(
+        host="localhost",
+        port=8090,
+        VERIFY_WEBUI_CERTIFICATE=False,
+        REQUESTS_ARGS={"timeout": (30, 60)},
+    )
+
 log_info("Creating client from BOT_TOKEN")
 bot = tgClient(
     "bot",
