@@ -73,7 +73,6 @@ async def stats(_, message):
     swap = swap_memory()
     memory = virtual_memory()
     stats = (
-        f"<a style="text-align: center">BalaPriyan<a>"
         f"<b>Commit Date:</b> {last_commit}\n\n"
         f"<b>Bot Uptime:</b> {get_readable_time(time() - botStartTime)}\n"
         f"<b>OS Uptime:</b> {get_readable_time(time() - boot_time())}\n\n"
