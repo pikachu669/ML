@@ -24,6 +24,7 @@ from bot import (
     Intervals,
     DATABASE_URL,
     INCOMPLETE_TASK_NOTIFIER,
+    bot_cache,
     scheduler,
 )
 from .helper.ext_utils.bot_utils import cmd_exec, sync_to_async, create_help_buttons
@@ -72,6 +73,7 @@ async def stats(_, message):
     swap = swap_memory()
     memory = virtual_memory()
     stats = (
+        f"<a style="text-align: center">BalaPriyan<a>"
         f"<b>Commit Date:</b> {last_commit}\n\n"
         f"<b>Bot Uptime:</b> {get_readable_time(time() - botStartTime)}\n"
         f"<b>OS Uptime:</b> {get_readable_time(time() - boot_time())}\n\n"
@@ -87,15 +89,16 @@ async def stats(_, message):
         f"<b>SWAP:</b> {get_readable_file_size(swap.total)} | <b>Used:</b> {swap.percent}%\n"
         f"<b>Memory Total:</b> {get_readable_file_size(memory.total)}\n"
         f"<b>Memory Free:</b> {get_readable_file_size(memory.available)}\n"
-        f"<b>Memory Used:</b> {get_readable_file_size(memory.used)}\n"
+        f"<b>Memory Used:</b> {get_readable_file_size(memory.used)}\n\n"
+        f"<b>Powered By : @TomenBots<b>"
     )
     await sendMessage(message, stats)
 
 
 async def start(client, message):
     buttons = ButtonMaker()
-    buttons.ubutton("Repo", "https://www.github.com/anasty17/mirror-leech-telegram-bot")
-    buttons.ubutton("Owner", "https://t.me/anas_tayyar")
+    buttons.ubutton("Channel", "https://t.me/TomenBots")
+    buttons.ubutton("Owner", "https://t.me/BalaPriyan")
     reply_markup = buttons.build_menu(2)
     if await CustomFilters.authorized(client, message):
         start_string = f"""
@@ -106,7 +109,7 @@ Type /{BotCommands.HelpCommand} to get a list of available commands
     else:
         await sendMessage(
             message,
-            "You Are not authorized user! Deploy your own mirror-leech bot",
+            "You Are not authorized user! Contact Admin To Get Access @BalaPriyanB, /n For Free Access Join @TomenBots",
             reply_markup,
         )
 
@@ -126,9 +129,7 @@ async def restart(_, message):
     await sleep(1)
     await sync_to_async(clean_all)
     await sleep(1)
-    proc1 = await create_subprocess_exec(
-        "pkill", "-9", "-f", "gunicorn|aria2c|qbittorrent-nox|ffmpeg|rclone|java"
-    )
+    proc1 = await create_subprocess_exec('pkill', '-9', '-f', f'gunicorn|{bot_cache["pkgs"][-1]}')
     proc2 = await create_subprocess_exec("python3", "update.py")
     await gather(proc1.wait(), proc2.wait())
     async with aiopen(".restartmsg", "w") as f:
