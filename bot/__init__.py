@@ -139,6 +139,8 @@ if DATABASE_URL:
 else:
     config_dict = {}
 
+
+
 OWNER_ID = environ.get("OWNER_ID", "")
 if len(OWNER_ID) == 0:
     log_error("OWNER_ID variable is missing! Exiting now")
