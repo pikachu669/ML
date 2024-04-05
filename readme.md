@@ -1,5 +1,5 @@
 <p align="center">
-    <a href="https://github.com/BalaPriyan/ML">
+    <a href="https://github.com/BalaPriyan/HK-MLTB">
         <kbd>
             <img width="250" src="https://graph.org/file/3c3aaf3e715f3596d0dd0.jpg" alt="MLTB Logo">
         </kbd>
@@ -20,7 +20,7 @@
 > Make sure git is Installed in your system or quick run `apt-get install git pip curl -y`
 
 ```shell
-git clone https://github.com/BalaPriyan/ML && cd ML
+git clone https://github.com/BalaPriyan/HK-MLML && cd HK-MLTB
 ```
 
 **Step 2 :** Now Install Heroku in your Sytem or checkout Official Heroku Deploy Docs, or Download via `apt-get` or `npm`
