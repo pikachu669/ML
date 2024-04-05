@@ -129,6 +129,10 @@ heroku logs
 
 ---
 
-    </details></li>
+  </details></li>
     <li><details>
-      <summary><b>Aria2c</b></summary>
+      <summary><b>GOOGLE COLAB</b></summary>
+
+click the below link and follow one by one
+
+[Colab Link](https://colab.research.google.com/drive/1tWUNJ3BIoNf7so2x8wWii0pA_uZ939Yt#scrollTo=3vxKZQk6wdhW)
